@@ -2,6 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,6 +19,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SocialMediaApp"
         tools:targetApi="31">
+        <activity
+            android:name=".SplashActivity"
+            android:exported="false"
+            android:label="@string/title_activity_splash"
+            android:theme="@style/Theme.SocialMediaApp" />
+        <activity
+            android:name=".HomeFeedActivity"
+            android:exported="false"
+            android:label="@string/title_activity_home_feed"
+            android:theme="@style/Theme.SocialMediaApp" />
         <activity
             android:name=".UserProfileActivity"
             android:exported="false"
