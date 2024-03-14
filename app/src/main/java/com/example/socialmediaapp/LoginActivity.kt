@@ -108,6 +108,7 @@ class MainActivity : ComponentActivity() {
                     authViewModel.currentUser.observe(this) {user ->
                         user?.let {
                             databaseViewModel.createUser(it)
+                            databaseViewModel.createUserWithFireStore(it)
                             authViewModel.clearCurrentUser()
                             Toast.makeText(this, "Sign-up Successful",Toast.LENGTH_SHORT).show()
                         }
@@ -141,7 +142,6 @@ fun loginScreen(authViewModel: AuthViewModel, databaseViewModel: DatabaseViewMod
         colors = listOf(
             Color(0xFF3f08e6),
             Color(0xFF752e7d)
-
         ),
 
         )
