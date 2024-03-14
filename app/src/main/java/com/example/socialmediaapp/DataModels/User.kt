@@ -1,8 +1,9 @@
 package com.example.socialmediaapp.DataModels
 
 data class User(
-    var Username: String,
+    var Uid: String,
+    var UserName: String,
+    var Email:String,
     var Password: String,
-    var Email: String,
     var profilePicture: String
 )

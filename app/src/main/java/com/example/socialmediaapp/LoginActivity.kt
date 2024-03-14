@@ -1,8 +1,11 @@
 package com.example.socialmediaapp
 
+import android.content.Context
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -54,11 +58,25 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModelProvider
+import com.example.socialmediaapp.ViewModels.FirebaseViewModels.AuthViewModel
+import com.example.socialmediaapp.ViewModels.FirebaseViewModels.AutheticationState
+import com.example.socialmediaapp.ViewModels.FirebaseViewModels.DatabaseViewModel
+import com.example.socialmediaapp.ViewModels.FirebaseViewModels.UserRepository
 import com.example.socialmediaapp.ui.theme.SocialMediaAppTheme
+import com.google.firebase.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.database.database
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val authViewModel: AuthViewModel by viewModels()
+        val databaseViewModel: DatabaseViewModel by viewModels()
+
+
         setContent {
             val CustomColorScheme = lightColorScheme(
                 primary = Color(0xFF3f08e6),
@@ -67,31 +85,63 @@ class MainActivity : ComponentActivity() {
                 onSecondary = Color.White
                 // Add other colors if necessary
             )
-
             SocialMediaAppTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFFFF0)
                 ) {
+                    val context = LocalContext.current
+                    loginScreen(authViewModel, databaseViewModel, context)
 
-                    loginScreen()
+
                 }
+            }
+        }
+        observeAuthenticationState(authViewModel,databaseViewModel)
+    }
+    private fun observeAuthenticationState(authViewModel: AuthViewModel, databaseViewModel: DatabaseViewModel){
+
+        authViewModel.authenticationState.observe(this) {state ->
+            when (state) {
+                AutheticationState.REGISTERED -> {
+                    authViewModel.currentUser.observe(this) {user ->
+                        user?.let {
+                            databaseViewModel.createUser(it)
+                            databaseViewModel.createUserWithFireStore(it)
+                            authViewModel.clearCurrentUser()
+                            Toast.makeText(this, "Sign-up Successful",Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+                AutheticationState.AUTHENTICATED -> {
+                    Toast.makeText(this, "Login Successful",Toast.LENGTH_SHORT).show()
+                }
+
+                AutheticationState.UNAUTHENTICATED -> {
+                    Toast.makeText(this, "Login or Sign-up Failed",Toast.LENGTH_SHORT).show()
+                }
+
+                else -> {}
             }
         }
     }
 }
 
 
+
+
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun loginScreen() {
+fun loginScreen(authViewModel: AuthViewModel, databaseViewModel: DatabaseViewModel,context: Context) {
 
     val gradient = Brush.verticalGradient(
         colors = listOf(
             Color(0xFF3f08e6),
             Color(0xFF752e7d)
-
         ),
 
         )
@@ -109,7 +159,6 @@ fun loginScreen() {
             .background(gradient)
     ) {
 
-        // Place the circular image on the top right inside the Box
         Image(
             painter = painterResource(id = R.drawable.peoplehavingfun),
             contentDescription = "People Having Fun",
@@ -123,7 +172,7 @@ fun loginScreen() {
             contentScale = ContentScale.Crop
         )
 
-        //Bottom IMage
+        //Bottom Image
         Image(
             painter = painterResource(id = R.drawable.friendshavingfun),
             contentDescription = "People Having Fun on beach",
@@ -190,8 +239,8 @@ fun loginScreen() {
                         label = { Text("Username") },
                         singleLine = true,
                         colors = TextFieldDefaults.textFieldColors(
-                            focusedIndicatorColor = Color.Transparent, // Hide underline when focused
-                            unfocusedIndicatorColor = Color.Transparent, // Hide underline when unfocused
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
                             disabledIndicatorColor = Color.Transparent
                         ),
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next)
@@ -223,7 +272,13 @@ fun loginScreen() {
 
 
             Button(
-                onClick = { /* Handle click */ },
+                onClick = {
+                          if (isSignedUp) {
+                              authViewModel.handleSignUp(username,email,password,context)
+                          } else {
+                              authViewModel.handleLogin(email,password,context)
+                            }
+                          },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)
@@ -237,7 +292,7 @@ fun loginScreen() {
                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
             ) {
                 Text(
-                    text = if (isSignedUp) "Login" else "Login",
+                    text = if (isSignedUp) "Sign up" else "Login",
                     fontSize = 20.sp,
                 )
             }
@@ -281,7 +336,7 @@ fun loginScreen() {
 
                 ) {
                     Text(
-                        text = "Sign up with Google",
+                        text = if (isSignedUp) "Sign up with Google" else "Login with Google",
                         fontSize = 15.sp,
                     )
 
@@ -292,11 +347,8 @@ fun loginScreen() {
                         contentDescription = "GoogleLogo",
                         modifier = Modifier.size(32.dp),
                     )
-
                 }
-
             }
-
         }
     }
 }
@@ -305,6 +357,6 @@ fun loginScreen() {
 @Composable
 fun GreetingPreview() {
     SocialMediaAppTheme {
-    loginScreen()
+
     }
 }
